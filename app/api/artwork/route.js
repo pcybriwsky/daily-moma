@@ -178,6 +178,32 @@ export async function GET(request) {
   } catch (error) {
     console.error('Error fetching artwork:', error);
     
+    // Parse the date parameter again for fallback
+    const { searchParams } = new URL(request.url);
+    const dateParam = searchParams.get('date');
+    
+    let fallbackDate;
+    if (dateParam) {
+      fallbackDate = new Date(dateParam);
+      if (isNaN(fallbackDate.getTime())) {
+        fallbackDate = new Date();
+      }
+    } else {
+      fallbackDate = new Date();
+    }
+
+    // Ensure date is not before September 1st, 2024
+    const minDate = new Date('2024-09-01');
+    if (fallbackDate < minDate) {
+      fallbackDate = minDate;
+    }
+
+    // Ensure date is not in the future
+    const today = new Date();
+    if (fallbackDate > today) {
+      fallbackDate = today;
+    }
+    
     // Fallback to sample data if MoMA data is unavailable
     const sampleArtworks = [
       {
@@ -228,10 +254,10 @@ export async function GET(request) {
     ];
     
     // Use the same improved randomization for sample data
-    const year = targetDate.getFullYear();
-    const month = targetDate.getMonth() + 1;
-    const day = targetDate.getDate();
-    const dayOfYear = Math.floor((targetDate - new Date(targetDate.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+    const year = fallbackDate.getFullYear();
+    const month = fallbackDate.getMonth() + 1;
+    const day = fallbackDate.getDate();
+    const dayOfYear = Math.floor((fallbackDate - new Date(fallbackDate.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
     
     const seed = (year * 10000 + month * 100 + day) * 7 + dayOfYear * 13;
     
@@ -263,6 +289,7 @@ export async function GET(request) {
       artwork2: picked2,
       totalArtworks: sampleArtworks.length,
       source: 'sample',
+      date: fallbackDate.toISOString().slice(0, 10),
       error: error.message
     });
   }

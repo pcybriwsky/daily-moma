@@ -5,10 +5,25 @@ import { useEffect, useState } from "react";
 export default function Home() {
   const [artwork1, setArtwork1] = useState(null);
   const [artwork2, setArtwork2] = useState(null);
+  const [image1, setImage1] = useState(null);
+  const [image2, setImage2] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [cacheInfo, setCacheInfo] = useState(null);
+
+  const fetchImage = async (objectId) => {
+    try {
+      const res = await fetch(`/api/image?objectId=${objectId}`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.imageUrl;
+      }
+    } catch (error) {
+      console.error('Error fetching image:', error);
+    }
+    return null;
+  };
 
   useEffect(() => {
     async function fetchArtwork() {
@@ -27,6 +42,17 @@ export default function Home() {
         setArtwork1(data.artwork1);
         setArtwork2(data.artwork2);
         setCacheInfo(data.cacheInfo);
+        
+        // Fetch images for both artworks
+        if (data.artwork1?.ObjectID) {
+          const img1 = await fetchImage(data.artwork1.ObjectID);
+          setImage1(img1);
+        }
+        
+        if (data.artwork2?.ObjectID) {
+          const img2 = await fetchImage(data.artwork2.ObjectID);
+          setImage2(img2);
+        }
         
         // Set error message if using sample data
         if (data.source === 'sample') {
@@ -158,8 +184,23 @@ export default function Home() {
         </div>
       )}
       
+      <div className="notice">
+        <p>🖼️ Images are currently placeholder due to MoMA's anti-scraping measures. Click "View on MoMA" to see the actual artwork images.</p>
+      </div>
+      
       <div className="artworks-container">
         <article className="artwork">
+          {image1 && (
+            <div className="artwork-image">
+              <img 
+                src={image1} 
+                alt={artwork1.Title}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
           <h2 className="artwork-title">{artwork1.Title}</h2>
           <h3 className="artist-name">{Array.isArray(artwork1.Artist) ? artwork1.Artist.join(', ') : artwork1.Artist}</h3>
           <div className="artwork-details">
@@ -184,6 +225,17 @@ export default function Home() {
         </div>
 
         <article className="artwork">
+          {image2 && (
+            <div className="artwork-image">
+              <img 
+                src={image2} 
+                alt={artwork2.Title}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
           <h2 className="artwork-title">{artwork2.Title}</h2>
           <h3 className="artist-name">{Array.isArray(artwork2.Artist) ? artwork2.Artist.join(', ') : artwork2.Artist}</h3>
           <div className="artwork-details">
