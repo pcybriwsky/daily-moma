@@ -1,3 +1,6 @@
+// Force this route to be dynamic (not statically generated)
+export const dynamic = 'force-dynamic';
+
 // In-memory cache for a curated sample of artworks
 let artworksCache = null;
 let cacheTimestamp = null;
